@@ -43,10 +43,26 @@
         </footer>
     </main>
     <script>
-        // Pe un telefon cu Android, linkul distribuit din joc duce direct în Google Play.
-        if (/Android/i.test(navigator.userAgent)) {
-            location.replace('https://play.google.com/store/apps/details?id=com.ropuzzle.game');
-        }
+        // De unde vine vizitatorul: ?s=share (butonul „Distribuie” din joc), ?s=facebook, ?s=tiktok, ?s=presa...
+        // și, opțional, ?c=numele-campaniei. Sursa merge mai departe în linkul spre Google Play, în două forme:
+        // parametrii utm_* (pe care Play Console îi arată la sursele instalărilor) și `referrer` (pe care Play
+        // îl dă aplicației la instalare). Pe un telefon cu Android, pagina duce direct în Google Play.
+        (function () {
+            var params = new URLSearchParams(location.search);
+            var clean = function (v, fallback) {
+                v = (v || '').toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
+                return v || fallback;
+            };
+            var source = clean(params.get('s'), 'site');
+            var campaign = clean(params.get('c'), 'lansare-2026');
+            var media = { share: 'app', facebook: 'social', instagram: 'social', tiktok: 'social', whatsapp: 'social', youtube: 'social', presa: 'press', email: 'email' };
+            var medium = media[source] || 'referral';
+            var utm = 'utm_source=' + source + '&utm_medium=' + medium + '&utm_campaign=' + campaign;
+            var play = 'https://play.google.com/store/apps/details?id=com.ropuzzle.game&' + utm +
+                '&referrer=' + encodeURIComponent(utm);
+            document.getElementById('play').href = play;
+            if (/Android/i.test(navigator.userAgent)) location.replace(play);
+        })();
     </script>
 </body>
 </html>
